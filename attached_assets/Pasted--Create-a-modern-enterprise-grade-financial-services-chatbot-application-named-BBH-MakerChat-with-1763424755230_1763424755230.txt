@@ -1,0 +1,128 @@
+
+Create a modern, enterprise-grade financial services chatbot application named "BBH MakerChat" with the following specifications:
+
+Build a secure chat interface for a global financial services firm that enables natural language queries about trades, settlements, portfolio analytics, compliance, and financial operations from existing data available in datalake.
+
+---
+
+## UI Requirements
+
+### 1. Layout Components
+
+**Main Structure:**
+- **Left Sidebar**: Conversation history with timestamps and query categorization
+- **Main Chat Area**: Message thread with user queries and AI responses
+- **Right Panel** (collapsible): Query suggestions organized by category
+- **Top Navigation**: User profile, settings, notifications, help/documentation
+
+### 2. Chat Interface
+
+**Input Features:**
+- Multi-line input box with character counter
+- "Send" button with keyboard shortcut (Enter to send, Shift+Enter for new line)
+- Voice input option (speech-to-text)
+- File attachment capability for context documents
+- Loading indicators with estimated response time
+- Typing animation for AI responses
+
+### 3. Query Suggestions (Pre-built Categories)
+
+Organize suggestions by:
+- Settlement & Trade Operations
+- Portfolio Analytics & Holdings
+- Corporate Actions & Cash Flow
+- Compliance & Risk Monitoring
+- Fee Analysis & Revenue
+- Client Behavior & Payments
+- NAV & Fund Operations
+- Reconciliation & Data Quality
+
+### 4. Response Visualization
+
+**Data Display:**
+- Render tabular data in sortable, filterable tables
+- Display charts/graphs for trend analysis (use Chart.js or Recharts)
+- Export options: CSV, Excel, PDF
+- Drill-down capability on summary metrics
+- Color-coded alerts:
+  - 🔴 Red for fails/exceptions
+  - 🟡 Yellow for warnings
+  - 🟢 Green for normal status
+
+### 5. Core Features
+
+- **Search**: Through conversation history
+- **Bookmarks**: Favorite important queries
+- **Sharing**: Share conversation or specific responses
+- **Feedback**: Thumbs up/down on responses
+- **Quick Filters**: Today, Last 7 days, Last 30 days, Custom date range
+- **Multi-language**: Support toggle for different languages
+
+### 6. Security & Compliance Features
+
+**Authentication*
+- Allow user to register and login into application using username and password
+- Role based security. Roles 1. External client 2. Operations team
+- Allow user to sign out
+- Add mock users
+
+**Session Management:**
+- Session timeout warning at 25 minutes
+- Automatic logout at 30 minutes of inactivity
+
+**Data Protection:**
+- Masked sensitive data display with reveal option (requires re-authentication)
+- Audit trail indicator showing "Query logged" after each interaction
+- Warning banner for queries accessing sensitive data
+- Two-factor authentication prompt for high-risk queries
+
+---
+
+## Example Query Templates to Display
+
+Display these as clickable query suggestions:
+
+1. "Have there been any settlement fails or unmatched trades today?"
+2. "Can I get a breakdown of my asset holdings by region, asset class, or currency?"
+3. "What are the corporate actions impacting my portfolio today and its impact on cashflow?"
+4. "Is there a trend in pre-trade vs post-trade compliance exceptions?"
+5. "Are there recurring anomalies in expense allocations across share classes?"
+6. "How do fee revenues trend vs AUM growth across client portfolios?"
+7. "Do clients with higher AUM have proportionally higher invoice adjustments?"
+8. "Which clients consistently pay late and what is the average delay?"
+9. "How do accrual adjustments trend across different fund types (equity vs fixed income)?"
+10. "What is the distribution of NAV strike delays by fund size and complexity?"
+11. "How do stale price occurrences trend by asset class and market volatility periods?"
+12. "Are there clusters of funds with consistently higher reconciliation exceptions?"
+
+## Backend server
+
+Create a robust, scalable backend service for an AI-powered financial services chatbot with natural language query processing capabilities.
+Build a secure API service that processes natural language queries, translates them to database queries, executes them against financial data sources, and returns structured responses with AI-generated insights.
+Mock OpenAPI integration
+
+---
+
+## Architecture Requirements
+
+### 1. API Layer
+
+**Core Features:**
+- RESTful API with OpenAPI/Swagger documentation
+- WebSocket support for real-time streaming responses
+- Rate limiting: 100 requests per user per minute
+- Request/response logging with correlation IDs
+- API versioning (v1, v2 support)
+- CORS configuration for frontend integration
+
+
+## Additional Notes
+
+- Ensure all API endpoints match the backend specification
+- Implement comprehensive error logging
+- Use semantic versioning for releases
+- Document all environment variables
+- Provide clear setup instructions in README
+- Include sample .env file
+- Add inline code comments for complex logic
+- Follow TypeScript best practices with strict mode enabled

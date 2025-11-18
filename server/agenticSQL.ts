@@ -64,7 +64,7 @@ Generate a SQL query plan for the following user query. Respond with JSON in thi
 }
 
 The SQL query must:
-- Be a valid PostgreSQL SELECT query only
+- Be a valid PostgreSQL SELECT query only (NO semicolon at the end)
 - Use proper JOINs to include human-readable names
 - Include appropriate aggregations and GROUP BY clauses
 - Limit results to 100 rows
@@ -86,6 +86,11 @@ The SQL query must:
     });
 
     const plan = JSON.parse(response.choices[0].message.content || "{}") as SQLPlan;
+
+    // Remove trailing semicolon if present
+    plan.sql = plan.sql.trim().replace(/;+$/, '');
+
+    console.log("[Agentic SQL] Generated SQL:", plan.sql.substring(0, 200));
 
     // Validate SQL safety
     validateSQLSafety(plan.sql);

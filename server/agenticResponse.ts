@@ -56,8 +56,25 @@ export async function generateAgenticResponse(
     // Generate SQL query plan
     const sqlPlan = await generateSQLQuery(userQuery, conversationCategory);
     
+    // Validate SQL plan
+    if (!sqlPlan || !sqlPlan.sql) {
+      console.error("[Agentic Response] Invalid SQL plan:", sqlPlan);
+      throw new Error("Failed to generate valid SQL query");
+    }
+    
     // Execute SQL query
     const results = await executeSQLQuery(sqlPlan.sql);
+    
+    // Ensure results is an array
+    if (!Array.isArray(results)) {
+      console.error("[Agentic Response] Invalid SQL results:", typeof results);
+      throw new Error("SQL query returned invalid results");
+    }
+    
+    console.log("[Agentic Response] SQL execution successful:", {
+      resultCount: results.length,
+      category: sqlPlan.category,
+    });
     
     // Handle drill-down requests
     if (drillDown.isRequest) {
@@ -88,11 +105,16 @@ export async function generateAgenticResponse(
     const narrative = await generateNarrative(userQuery, results, sqlPlan.sql);
     
     // Format insights into readable text
-    const insightsText = narrative.insights.length > 0
+    const insightsText = (narrative.insights && narrative.insights.length > 0)
       ? "\n\n**Key Insights:**\n" + narrative.insights.map(i => `- ${i}`).join("\n")
       : "";
     
-    const content = `${narrative.summary}${insightsText}`;
+    const content = `${narrative.summary || "Analysis complete."}${insightsText}`;
+    
+    console.log("[Agentic Response] Generated narrative:", { 
+      summaryLength: content.length,
+      insightsCount: narrative.insights?.length || 0
+    });
 
     // Determine available views based on results
     const hasData = results.length > 0;
@@ -101,16 +123,23 @@ export async function generateAgenticResponse(
       chart: sqlPlan.chartType !== undefined || narrative.visualizationHint !== "table",
     } : undefined;
 
+    // Store results for drill-down (without underscore prefix to avoid filtering)
+    const responseData = {
+      availableViews,
+      sqlResults: results,
+      sqlPlan: sqlPlan,
+    };
+
+    console.log("[Agentic Response] Storing SQL results:", {
+      resultCount: results.length,
+      hasAvailableViews: !!availableViews,
+    });
+
     return {
       content,
       hasTable: false,
       hasChart: false,
-      data: {
-        availableViews,
-        // Store results and SQL for drill-down requests
-        _sqlResults: results,
-        _sqlPlan: sqlPlan,
-      },
+      data: responseData,
       availableViews,
     };
   } catch (error: any) {
@@ -132,12 +161,21 @@ export async function handleDrillDownRequest(
     throw new Error("Invalid drill-down request");
   }
 
-  const sqlResults = previousMessageData._sqlResults;
-  const sqlPlan = previousMessageData._sqlPlan;
+  console.log("[Agentic Response] Drill-down request, previousMessageData keys:", Object.keys(previousMessageData || {}));
+
+  const sqlResults = previousMessageData.sqlResults;
+  const sqlPlan = previousMessageData.sqlPlan;
 
   if (!sqlResults || !sqlPlan) {
+    console.error("[Agentic Response] Missing SQL data:", {
+      hasSqlResults: !!sqlResults,
+      hasSqlPlan: !!sqlPlan,
+      dataKeys: Object.keys(previousMessageData || {}),
+    });
     throw new Error("No SQL results available for drill-down");
   }
+
+  console.log("[Agentic Response] Processing drill-down with", sqlResults.length, "results");
 
   if (drillDown.viewType === 'table') {
     const tableData = formatResultsForTable(sqlResults);

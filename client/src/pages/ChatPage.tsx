@@ -8,7 +8,7 @@ import QuerySuggestionsPanel from "@/components/QuerySuggestionsPanel";
 import SessionTimeoutWarning from "@/components/SessionTimeoutWarning";
 import { api } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
-import type { Conversation, Message } from "@shared/schema";
+import type { Conversation, Message, MessageData } from "@shared/schema";
 
 interface ChatPageProps {
   username: string;
@@ -184,7 +184,7 @@ export default function ChatPage({ username, role, onLogout }: ChatPageProps) {
     timestamp: new Date(m.createdAt),
     hasTable: m.hasTable || false,
     hasChart: m.hasChart || false,
-    data: m.data as any,
+    data: m.data as MessageData | undefined,
     feedback: m.feedback as "up" | "down" | null,
   }));
 

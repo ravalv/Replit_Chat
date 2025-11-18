@@ -3,24 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessageDataTable } from "./MessageDataTable";
 import { MessageDataChart } from "./MessageDataChart";
-
-interface TableData {
-  headers: string[];
-  rows: (string | number)[][];
-}
-
-interface ChartData {
-  type: "bar" | "line" | "pie";
-  data: {
-    name: string;
-    value: number;
-  }[];
-}
-
-interface MessageData {
-  table?: TableData;
-  chart?: ChartData;
-}
+import type { MessageData } from "@shared/schema";
 
 interface ChatMessageProps {
   role: "user" | "assistant";
@@ -64,13 +47,13 @@ export default function ChatMessage({
 
         {!isUser && data && (
           <div className="w-full max-w-3xl">
-            {data.table && (
+            {data.table && data.table.headers && data.table.rows && (
               <MessageDataTable
                 headers={data.table.headers}
                 rows={data.table.rows}
               />
             )}
-            {data.chart && (
+            {data.chart && data.chart.type && data.chart.data && (
               <MessageDataChart
                 type={data.chart.type}
                 data={data.chart.data}

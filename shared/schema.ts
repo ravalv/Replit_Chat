@@ -59,6 +59,25 @@ export const updateMessageFeedbackSchema = z.object({
   feedback: z.enum(["up", "down"]).nullable(),
 });
 
+// Message data schemas
+export const tableDataSchema = z.object({
+  headers: z.array(z.string()),
+  rows: z.array(z.array(z.union([z.string(), z.number()]))),
+});
+
+export const chartDataSchema = z.object({
+  type: z.enum(["bar", "line", "pie"]),
+  data: z.array(z.object({
+    name: z.string(),
+    value: z.number(),
+  })),
+});
+
+export const messageDataSchema = z.object({
+  table: tableDataSchema.optional(),
+  chart: chartDataSchema.optional(),
+}).optional();
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
@@ -67,3 +86,6 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 export type UpdateConversation = z.infer<typeof updateConversationSchema>;
 export type UpdateMessageFeedback = z.infer<typeof updateMessageFeedbackSchema>;
+export type TableData = z.infer<typeof tableDataSchema>;
+export type ChartData = z.infer<typeof chartDataSchema>;
+export type MessageData = z.infer<typeof messageDataSchema>;

@@ -22,6 +22,14 @@ export function MessageDataTable({ headers, rows }: MessageDataTableProps) {
   const [sortColumn, setSortColumn] = useState<number | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
+  // Runtime validation
+  if (!headers || !Array.isArray(headers) || headers.length === 0) {
+    return null;
+  }
+  if (!rows || !Array.isArray(rows) || rows.length === 0) {
+    return null;
+  }
+
   const handleSort = (columnIndex: number) => {
     if (sortColumn === columnIndex) {
       if (sortDirection === "asc") {

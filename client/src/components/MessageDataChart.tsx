@@ -35,6 +35,14 @@ const COLORS = [
 ];
 
 export function MessageDataChart({ type, data, title }: MessageDataChartProps) {
+  // Runtime validation
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return null;
+  }
+  if (!type || !["bar", "line", "pie"].includes(type)) {
+    return null;
+  }
+
   const renderChart = () => {
     switch (type) {
       case "bar":

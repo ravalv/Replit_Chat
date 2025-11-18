@@ -6,24 +6,7 @@ import TypingIndicator from "./TypingIndicator";
 import DateFilters from "./DateFilters";
 import { PanelRightOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface TableData {
-  headers: string[];
-  rows: (string | number)[][];
-}
-
-interface ChartData {
-  type: "bar" | "line" | "pie";
-  data: {
-    name: string;
-    value: number;
-  }[];
-}
-
-interface MessageData {
-  table?: TableData;
-  chart?: ChartData;
-}
+import type { MessageData } from "@shared/schema";
 
 interface Message {
   id: string;

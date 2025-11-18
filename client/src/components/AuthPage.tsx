@@ -31,8 +31,8 @@ export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
       console.log("Passwords do not match");
       return;
     }
-    console.log("Register attempted:", { registerUsername, role });
-    onRegister(registerUsername, registerPassword, role);
+    console.log("Register attempted:", { registerUsername });
+    onRegister(registerUsername, registerPassword, "external_client");
   };
 
   return (
@@ -146,18 +146,10 @@ export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Role</Label>
-                    <RadioGroup value={role} onValueChange={(value) => setRole(value as "external_client" | "operations_team")}>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="external_client" id="register-client" data-testid="radio-register-client" />
-                        <Label htmlFor="register-client" className="font-normal cursor-pointer">External Client</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="operations_team" id="register-ops" data-testid="radio-register-ops" />
-                        <Label htmlFor="register-ops" className="font-normal cursor-pointer">Operations Team</Label>
-                      </div>
-                    </RadioGroup>
+                  <div className="rounded-md bg-muted p-3 text-sm">
+                    <p className="text-muted-foreground">
+                      New accounts are registered as External Clients. Contact your administrator for Operations Team access.
+                    </p>
                   </div>
                   <Button type="submit" className="w-full" data-testid="button-register">
                     Register

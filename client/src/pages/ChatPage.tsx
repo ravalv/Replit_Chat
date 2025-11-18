@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import TopNavigation from "@/components/TopNavigation";
 import ConversationHistory from "@/components/ConversationHistory";
 import ChatArea from "@/components/ChatArea";
 import QuerySuggestionsPanel from "@/components/QuerySuggestionsPanel";
 import SessionTimeoutWarning from "@/components/SessionTimeoutWarning";
+import { api } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
+import type { Conversation, Message } from "@shared/schema";
 
 interface ChatPageProps {
   username: string;
@@ -11,104 +16,116 @@ interface ChatPageProps {
   onLogout: () => void;
 }
 
-// todo: remove mock functionality
-const mockConversations = [
-  {
-    id: '1',
-    title: 'Settlement fails analysis',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    category: 'Settlement & Trade Operations',
-    isBookmarked: true,
-  },
-  {
-    id: '2',
-    title: 'Portfolio holdings breakdown',
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    category: 'Portfolio Analytics',
-    isBookmarked: false,
-  },
-  {
-    id: '3',
-    title: 'Compliance exceptions trend',
-    timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000),
-    category: 'Compliance & Risk',
-    isBookmarked: false,
-  },
-];
-
-const mockMessages = [
-  {
-    id: '1',
-    role: 'user' as const,
-    content: 'Have there been any settlement fails or unmatched trades today?',
-    timestamp: new Date(Date.now() - 5 * 60 * 1000),
-  },
-  {
-    id: '2',
-    role: 'assistant' as const,
-    content: 'Based on today\'s data, there are 3 settlement fails totaling $2.4M across different counterparties. The main reasons include:\n\n1. Insufficient securities (2 trades)\n2. Missing settlement instructions (1 trade)\n\nWould you like me to provide a detailed breakdown?',
-    timestamp: new Date(Date.now() - 4 * 60 * 1000),
-    hasTable: true,
-    feedback: null,
-  },
-];
-
 export default function ChatPage({ username, role, onLogout }: ChatPageProps) {
-  const [conversations, setConversations] = useState(mockConversations);
-  const [activeConversationId, setActiveConversationId] = useState('1');
-  const [messages, setMessages] = useState(mockMessages);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(true);
   const [showSessionWarning, setShowSessionWarning] = useState(false);
-  const [sessionTimeRemaining, setSessionTimeRemaining] = useState(300); // 5 minutes for demo
+  const [sessionTimeRemaining, setSessionTimeRemaining] = useState(0);
+  const { toast } = useToast();
 
-  // Session timeout simulation
+  // Fetch conversations
+  const { data: conversations = [] } = useQuery<Conversation[]>({
+    queryKey: ["/api/conversations"],
+    queryFn: () => api.getConversations(),
+  });
+
+  // Fetch messages for active conversation
+  const { data: messages = [] } = useQuery<Message[]>({
+    queryKey: ["/api/conversations", activeConversationId, "messages"],
+    queryFn: () => api.getMessages(activeConversationId!),
+    enabled: !!activeConversationId,
+  });
+
+  // Session monitoring
   useEffect(() => {
-    const timer = setInterval(() => {
-      setSessionTimeRemaining((prev) => {
-        if (prev <= 1) {
-          setShowSessionWarning(false);
-          onLogout();
-          return 0;
-        }
-        if (prev === 300) { // Show warning at 5 minutes (25 minutes in real app)
-          setShowSessionWarning(true);
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    const checkSession = async () => {
+      try {
+        const session = await api.getSession();
+        setSessionTimeRemaining(Math.floor(session.sessionTimeRemaining / 1000));
+        setShowSessionWarning(session.showWarning);
+      } catch (error) {
+        // Session expired
+        onLogout();
+      }
+    };
 
-    return () => clearInterval(timer);
+    checkSession();
+    const interval = setInterval(checkSession, 5000); // Check every 5 seconds
+
+    return () => clearInterval(interval);
   }, [onLogout]);
 
-  const handleSendMessage = (message: string) => {
-    const newMessage = {
-      id: String(messages.length + 1),
-      role: 'user' as const,
-      content: message,
-      timestamp: new Date(),
-    };
-    setMessages([...messages, newMessage]);
-    setIsTyping(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = {
-        id: String(messages.length + 2),
-        role: 'assistant' as const,
-        content: 'I\'ve analyzed your query. Here are the insights based on the latest financial data...',
-        timestamp: new Date(),
-        hasTable: Math.random() > 0.5,
-        hasChart: Math.random() > 0.5,
-        feedback: null,
-      };
-      setMessages((prev) => [...prev, aiResponse]);
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: async (content: string) => {
+      if (activeConversationId) {
+        return api.sendMessage(activeConversationId, content);
+      } else {
+        return api.chat(content);
+      }
+    },
+    onMutate: () => {
+      setIsTyping(true);
+    },
+    onSuccess: (data) => {
+      if ("conversation" in data) {
+        // New conversation created
+        setActiveConversationId(data.conversation.id);
+        queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+      }
+      queryClient.invalidateQueries({
+        queryKey: ["/api/conversations", activeConversationId || data.conversation?.id, "messages"],
+      });
       setIsTyping(false);
-    }, 2000);
+    },
+    onError: (error: any) => {
+      setIsTyping(false);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update conversation mutation
+  const updateConversationMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: any }) =>
+      api.updateConversation(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+    },
+  });
+
+  // Delete conversation mutation
+  const deleteConversationMutation = useMutation({
+    mutationFn: (id: string) => api.deleteConversation(id),
+    onSuccess: () => {
+      if (activeConversationId === deleteConversationMutation.variables) {
+        setActiveConversationId(null);
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+    },
+  });
+
+  // Update message feedback mutation
+  const updateFeedbackMutation = useMutation({
+    mutationFn: ({ id, feedback }: { id: string; feedback: "up" | "down" | null }) =>
+      api.updateMessageFeedback(id, feedback),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/conversations", activeConversationId, "messages"],
+      });
+    },
+  });
+
+  const handleSendMessage = (message: string) => {
+    sendMessageMutation.mutate(message);
   };
 
   const handleFeedback = (messageId: string, feedback: "up" | "down") => {
-    setMessages(messages.map(m => m.id === messageId ? { ...m, feedback } as any : m));
+    updateFeedbackMutation.mutate({ id: messageId, feedback });
   };
 
   const handleSelectQuery = (query: string) => {
@@ -116,10 +133,59 @@ export default function ChatPage({ username, role, onLogout }: ChatPageProps) {
     setIsSuggestionsOpen(false);
   };
 
-  const handleExtendSession = () => {
-    setSessionTimeRemaining(1800); // Reset to 30 minutes
-    setShowSessionWarning(false);
+  const handleExtendSession = async () => {
+    try {
+      const result = await api.extendSession();
+      setSessionTimeRemaining(Math.floor(result.sessionTimeRemaining / 1000));
+      setShowSessionWarning(false);
+      toast({
+        title: "Session extended",
+        description: "Your session has been extended",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
+
+  const handleNewConversation = () => {
+    setActiveConversationId(null);
+  };
+
+  const handleToggleBookmark = (id: string) => {
+    const conversation = conversations.find((c) => c.id === id);
+    if (conversation) {
+      updateConversationMutation.mutate({
+        id,
+        updates: { isBookmarked: !conversation.isBookmarked },
+      });
+    }
+  };
+
+  const handleDeleteConversation = (id: string) => {
+    deleteConversationMutation.mutate(id);
+  };
+
+  const conversationList = conversations.map((c) => ({
+    id: c.id,
+    title: c.title,
+    timestamp: new Date(c.updatedAt),
+    category: c.category,
+    isBookmarked: c.isBookmarked,
+  }));
+
+  const messageList = messages.map((m) => ({
+    id: m.id,
+    role: m.role as "user" | "assistant",
+    content: m.content,
+    timestamp: new Date(m.createdAt),
+    hasTable: m.hasTable || false,
+    hasChart: m.hasChart || false,
+    feedback: m.feedback as "up" | "down" | null,
+  }));
 
   return (
     <div className="flex h-screen flex-col">
@@ -128,23 +194,18 @@ export default function ChatPage({ username, role, onLogout }: ChatPageProps) {
       <div className="flex flex-1 overflow-hidden">
         <div className="w-80 border-r">
           <ConversationHistory
-            conversations={conversations}
+            conversations={conversationList}
             activeConversationId={activeConversationId}
             onSelectConversation={setActiveConversationId}
-            onDeleteConversation={(id) => setConversations(conversations.filter(c => c.id !== id))}
-            onToggleBookmark={(id) => setConversations(conversations.map(c =>
-              c.id === id ? { ...c, isBookmarked: !c.isBookmarked } : c
-            ))}
-            onNewConversation={() => {
-              setActiveConversationId('');
-              setMessages([]);
-            }}
+            onDeleteConversation={handleDeleteConversation}
+            onToggleBookmark={handleToggleBookmark}
+            onNewConversation={handleNewConversation}
           />
         </div>
 
         <div className="flex-1">
           <ChatArea
-            messages={messages}
+            messages={messageList}
             isTyping={isTyping}
             onSendMessage={handleSendMessage}
             onFeedback={handleFeedback}

@@ -112,8 +112,13 @@ Preferred communication style: Simple, everyday language.
 **Strategy**: Session-based authentication with server-side session storage
 
 **User Roles**
-- `external_client`: Default role for registered users
-- `operations_team`: Administrative role (role-based features not yet implemented)
+- `external_client`: Client-facing role for registered users
+- `operations_team`: Internal operations team role
+
+**Role Selection**
+- Users select their role during registration via radio buttons
+- Available options: External Client (default) or Operations Team
+- Role is validated and stored in the database during account creation
 
 **Session Management**
 - 30-minute session timeout with automatic expiration

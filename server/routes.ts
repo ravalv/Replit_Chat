@@ -96,12 +96,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth Routes
   app.post("/api/auth/register", authLimiter, async (req, res) => {
     try {
-      const { username, password } = req.body;
+      const { username, password, role } = req.body;
 
       // Password strength validation
       if (password.length < 8) {
         return res.status(400).json({ message: "Password must be at least 8 characters" });
       }
+
+      // Validate role
+      const validRoles = ["external_client", "operations_team"];
+      const userRole = validRoles.includes(role) ? role : "external_client";
 
       // Check if user exists
       const existingUser = await storage.getUserByUsername(username);
@@ -111,9 +115,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Hash password
       const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-
-      // Always default to external_client role - operations_team requires admin approval
-      const userRole = "external_client";
 
       // Create user
       const user = await storage.createUser({

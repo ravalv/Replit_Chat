@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface AuthPageProps {
-  onLogin: (username: string, password: string, role: "external_client" | "operations_team") => void;
+  onLogin: (username: string, password: string) => void;
   onRegister: (username: string, password: string, role: "external_client" | "operations_team") => void;
 }
 
@@ -21,8 +21,8 @@ export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempted:", { loginUsername, role });
-    onLogin(loginUsername, loginPassword, role);
+    console.log("Login attempted:", { loginUsername });
+    onLogin(loginUsername, loginPassword);
   };
 
   const handleRegister = (e: React.FormEvent) => {
@@ -31,8 +31,8 @@ export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
       console.log("Passwords do not match");
       return;
     }
-    console.log("Register attempted:", { registerUsername });
-    onRegister(registerUsername, registerPassword, "external_client");
+    console.log("Register attempted:", { registerUsername, role });
+    onRegister(registerUsername, registerPassword, role);
   };
 
   return (
@@ -80,19 +80,6 @@ export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Role</Label>
-                    <RadioGroup value={role} onValueChange={(value) => setRole(value as "external_client" | "operations_team")}>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="external_client" id="login-client" data-testid="radio-login-client" />
-                        <Label htmlFor="login-client" className="font-normal cursor-pointer">External Client</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="operations_team" id="login-ops" data-testid="radio-login-ops" />
-                        <Label htmlFor="login-ops" className="font-normal cursor-pointer">Operations Team</Label>
-                      </div>
-                    </RadioGroup>
                   </div>
                   <Button type="submit" className="w-full" data-testid="button-login">
                     Login
@@ -146,10 +133,18 @@ export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
                       required
                     />
                   </div>
-                  <div className="rounded-md bg-muted p-3 text-sm">
-                    <p className="text-muted-foreground">
-                      New accounts are registered as External Clients. Contact your administrator for Operations Team access.
-                    </p>
+                  <div className="space-y-2">
+                    <Label>Account Type</Label>
+                    <RadioGroup value={role} onValueChange={(value) => setRole(value as "external_client" | "operations_team")}>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="external_client" id="register-client" data-testid="radio-register-client" />
+                        <Label htmlFor="register-client" className="font-normal cursor-pointer">External Client</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="operations_team" id="register-ops" data-testid="radio-register-ops" />
+                        <Label htmlFor="register-ops" className="font-normal cursor-pointer">Operations Team</Label>
+                      </div>
+                    </RadioGroup>
                   </div>
                   <Button type="submit" className="w-full" data-testid="button-register">
                     Register

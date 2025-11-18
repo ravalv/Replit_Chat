@@ -29,7 +29,7 @@ function AppContent() {
       });
   }, []);
 
-  const handleLogin = async (username: string, password: string, role: string) => {
+  const handleLogin = async (username: string, password: string) => {
     try {
       const data = await api.login(username, password);
       setCurrentUser(data.user);

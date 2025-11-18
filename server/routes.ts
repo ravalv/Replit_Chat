@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import { insertUserSchema, insertConversationSchema, insertMessageSchema, updateConversationSchema, updateMessageFeedbackSchema } from "@shared/schema";
 import { generateAIResponse, generateConversationTitle, categorizeQuery } from "./mockAI";
+import { generateAgenticResponse, handleDrillDownRequest } from "./agenticResponse";
 import { randomUUID } from "crypto";
 import bcrypt from "bcrypt";
 
@@ -312,11 +313,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create user message
       const userMessage = await storage.createMessage(userMessageData);
 
-      // Generate AI response (pass conversation category for drill-down support)
-      const aiResponse = generateAIResponse(userMessageData.content, conversation.category);
+      // Check if this is a drill-down request
+      const isDrillDown = userMessageData.content.toLowerCase().includes("show as table") || 
+                          userMessageData.content.toLowerCase().includes("show as chart") ||
+                          userMessageData.content.toLowerCase().includes("view as table") ||
+                          userMessageData.content.toLowerCase().includes("view as chart");
 
-      // Simulate delay for realistic AI response
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      let aiResponse;
+
+      if (isDrillDown) {
+        // Get the last assistant message to retrieve SQL results
+        const messages = await storage.getMessagesByConversationId(conversationId);
+        const lastAssistantMessage = messages
+          .filter(m => m.role === "assistant")
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+        if (lastAssistantMessage?.data) {
+          try {
+            aiResponse = await handleDrillDownRequest(userMessageData.content, lastAssistantMessage.data);
+          } catch (error: any) {
+            console.error("[Routes] Drill-down error:", error);
+            aiResponse = await generateAgenticResponse(userMessageData.content, conversation.category);
+          }
+        } else {
+          aiResponse = await generateAgenticResponse(userMessageData.content, conversation.category);
+        }
+      } else {
+        // Generate new agentic SQL response
+        aiResponse = await generateAgenticResponse(userMessageData.content, conversation.category);
+      }
 
       // Include availableViews in the data if present
       const messageData = aiResponse.data || {};
@@ -406,11 +431,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: message,
       });
 
-      // Generate AI response (no previous category for new conversations)
-      const aiResponse = generateAIResponse(message);
-
-      // Simulate delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Generate agentic SQL response
+      const aiResponse = await generateAgenticResponse(message, category);
 
       // Include availableViews in the data if present
       const messageData2 = aiResponse.data || {};

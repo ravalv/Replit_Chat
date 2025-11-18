@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, jsonb, decimal, integer, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -89,3 +89,123 @@ export type UpdateMessageFeedback = z.infer<typeof updateMessageFeedbackSchema>;
 export type TableData = z.infer<typeof tableDataSchema>;
 export type ChartData = z.infer<typeof chartDataSchema>;
 export type MessageData = z.infer<typeof messageDataSchema>;
+
+export const securities = pgTable("securities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  symbol: text("symbol").notNull().unique(),
+  name: text("name").notNull(),
+  assetClass: text("asset_class").notNull(),
+  currency: text("currency").notNull().default("USD"),
+});
+
+export const counterparties = pgTable("counterparties", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  type: text("type").notNull(),
+  region: text("region").notNull(),
+});
+
+export const clients = pgTable("clients", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  type: text("type").notNull(),
+  region: text("region").notNull(),
+  aum: decimal("aum", { precision: 15, scale: 2 }),
+});
+
+export const funds = pgTable("funds", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  type: text("type").notNull(),
+  inceptionDate: date("inception_date").notNull(),
+});
+
+export const tradeSettlements = pgTable("trade_settlements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tradeDate: date("trade_date").notNull(),
+  settlementDate: date("settlement_date").notNull(),
+  securityId: varchar("security_id").notNull().references(() => securities.id),
+  counterpartyId: varchar("counterparty_id").notNull().references(() => counterparties.id),
+  quantity: decimal("quantity", { precision: 15, scale: 2 }).notNull(),
+  price: decimal("price", { precision: 15, scale: 4 }).notNull(),
+  tradeValue: decimal("trade_value", { precision: 15, scale: 2 }).notNull(),
+  status: text("status").notNull(),
+  failReason: text("fail_reason"),
+  side: text("side").notNull(),
+});
+
+export const portfolioPositions = pgTable("portfolio_positions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  asOfDate: date("as_of_date").notNull(),
+  fundId: varchar("fund_id").notNull().references(() => funds.id),
+  securityId: varchar("security_id").notNull().references(() => securities.id),
+  quantity: decimal("quantity", { precision: 15, scale: 2 }).notNull(),
+  marketValue: decimal("market_value", { precision: 15, scale: 2 }).notNull(),
+  costBasis: decimal("cost_basis", { precision: 15, scale: 2 }).notNull(),
+  region: text("region").notNull(),
+});
+
+export const corporateActions = pgTable("corporate_actions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  securityId: varchar("security_id").notNull().references(() => securities.id),
+  actionType: text("action_type").notNull(),
+  exDate: date("ex_date").notNull(),
+  paymentDate: date("payment_date"),
+  amount: decimal("amount", { precision: 15, scale: 4 }),
+  ratio: text("ratio"),
+  status: text("status").notNull(),
+  description: text("description"),
+});
+
+export const complianceExceptions = pgTable("compliance_exceptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  exceptionDate: date("exception_date").notNull(),
+  fundId: varchar("fund_id").notNull().references(() => funds.id),
+  ruleType: text("rule_type").notNull(),
+  severity: text("severity").notNull(),
+  description: text("description").notNull(),
+  status: text("status").notNull(),
+  resolvedDate: date("resolved_date"),
+});
+
+export const feeRevenue = pgTable("fee_revenue", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  periodDate: date("period_date").notNull(),
+  clientId: varchar("client_id").notNull().references(() => clients.id),
+  feeType: text("fee_type").notNull(),
+  feeAmount: decimal("fee_amount", { precision: 15, scale: 2 }).notNull(),
+  aum: decimal("aum", { precision: 15, scale: 2 }).notNull(),
+  basisPoints: integer("basis_points").notNull(),
+});
+
+export const clientPayments = pgTable("client_payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  paymentDate: date("payment_date").notNull(),
+  clientId: varchar("client_id").notNull().references(() => clients.id),
+  invoiceNumber: text("invoice_number").notNull().unique(),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  status: text("status").notNull(),
+  daysOverdue: integer("days_overdue").default(0),
+});
+
+export const navAdjustments = pgTable("nav_adjustments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  navDate: date("nav_date").notNull(),
+  fundId: varchar("fund_id").notNull().references(() => funds.id),
+  adjustmentType: text("adjustment_type").notNull(),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  reason: text("reason").notNull(),
+  approvedBy: text("approved_by"),
+});
+
+export const reconciliationExceptions = pgTable("reconciliation_exceptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  exceptionDate: date("exception_date").notNull(),
+  source: text("source").notNull(),
+  exceptionType: text("exception_type").notNull(),
+  securityId: varchar("security_id").references(() => securities.id),
+  discrepancyAmount: decimal("discrepancy_amount", { precision: 15, scale: 2 }),
+  status: text("status").notNull(),
+  resolvedDate: date("resolved_date"),
+  ageInDays: integer("age_in_days").notNull(),
+});

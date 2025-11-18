@@ -312,11 +312,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create user message
       const userMessage = await storage.createMessage(userMessageData);
 
-      // Generate AI response
-      const aiResponse = generateAIResponse(userMessageData.content);
+      // Generate AI response (pass conversation category for drill-down support)
+      const aiResponse = generateAIResponse(userMessageData.content, conversation.category);
 
       // Simulate delay for realistic AI response
       await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Include availableViews in the data if present
+      const messageData = aiResponse.data || {};
+      if (aiResponse.availableViews) {
+        (messageData as any).availableViews = aiResponse.availableViews;
+      }
 
       const aiMessageData = insertMessageSchema.parse({
         conversationId,
@@ -324,7 +330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: aiResponse.content,
         hasTable: aiResponse.hasTable,
         hasChart: aiResponse.hasChart,
-        data: aiResponse.data,
+        data: messageData,
       });
 
       const aiMessage = await storage.createMessage(aiMessageData);
@@ -400,11 +406,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: message,
       });
 
-      // Generate AI response
+      // Generate AI response (no previous category for new conversations)
       const aiResponse = generateAIResponse(message);
 
       // Simulate delay
       await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Include availableViews in the data if present
+      const messageData2 = aiResponse.data || {};
+      if (aiResponse.availableViews) {
+        (messageData2 as any).availableViews = aiResponse.availableViews;
+      }
 
       const aiMessage = await storage.createMessage({
         conversationId: conversation.id,
@@ -412,7 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: aiResponse.content,
         hasTable: aiResponse.hasTable,
         hasChart: aiResponse.hasChart,
-        data: aiResponse.data,
+        data: messageData2,
       });
 
       // Log query for audit

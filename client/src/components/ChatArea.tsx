@@ -17,6 +17,10 @@ interface Message {
   hasChart?: boolean;
   data?: MessageData;
   feedback?: "up" | "down" | null;
+  availableViews?: {
+    table: boolean;
+    chart: boolean;
+  };
 }
 
 interface ChatAreaProps {
@@ -24,6 +28,7 @@ interface ChatAreaProps {
   isTyping: boolean;
   onSendMessage: (message: string) => void;
   onFeedback: (messageId: string, feedback: "up" | "down") => void;
+  onRequestView: (viewType: "table" | "chart") => void;
   onToggleSuggestions: () => void;
   isSuggestionsOpen: boolean;
 }
@@ -33,6 +38,7 @@ export default function ChatArea({
   isTyping,
   onSendMessage,
   onFeedback,
+  onRequestView,
   onToggleSuggestions,
   isSuggestionsOpen,
 }: ChatAreaProps) {
@@ -64,9 +70,15 @@ export default function ChatArea({
               hasChart={message.hasChart}
               data={message.data}
               feedback={message.feedback}
+              availableViews={message.availableViews}
               onFeedback={
                 message.role === "assistant"
                   ? (feedback) => onFeedback(message.id, feedback)
+                  : undefined
+              }
+              onRequestView={
+                message.role === "assistant"
+                  ? onRequestView
                   : undefined
               }
             />

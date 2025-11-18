@@ -177,16 +177,28 @@ export default function ChatPage({ username, role, onLogout }: ChatPageProps) {
     isBookmarked: c.isBookmarked,
   }));
 
-  const messageList = messages.map((m) => ({
-    id: m.id,
-    role: m.role as "user" | "assistant",
-    content: m.content,
-    timestamp: new Date(m.createdAt),
-    hasTable: m.hasTable || false,
-    hasChart: m.hasChart || false,
-    data: m.data as MessageData | undefined,
-    feedback: m.feedback as "up" | "down" | null,
-  }));
+  const handleRequestView = (viewType: "table" | "chart") => {
+    const message = viewType === "table" ? "Show as table" : "Show as chart";
+    handleSendMessage(message);
+  };
+
+  const messageList = messages.map((m) => {
+    // Extract availableViews if present in the data
+    const messageData = m.data as any;
+    const availableViews = messageData?.availableViews;
+    
+    return {
+      id: m.id,
+      role: m.role as "user" | "assistant",
+      content: m.content,
+      timestamp: new Date(m.createdAt),
+      hasTable: m.hasTable || false,
+      hasChart: m.hasChart || false,
+      data: m.data as MessageData | undefined,
+      feedback: m.feedback as "up" | "down" | null,
+      availableViews,
+    };
+  });
 
   return (
     <div className="flex h-screen flex-col">
@@ -210,6 +222,7 @@ export default function ChatPage({ username, role, onLogout }: ChatPageProps) {
             isTyping={isTyping}
             onSendMessage={handleSendMessage}
             onFeedback={handleFeedback}
+            onRequestView={handleRequestView}
             onToggleSuggestions={() => setIsSuggestionsOpen(!isSuggestionsOpen)}
             isSuggestionsOpen={isSuggestionsOpen}
           />

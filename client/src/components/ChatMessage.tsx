@@ -1,4 +1,4 @@
-import { ThumbsUp, ThumbsDown, Copy, Download } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Copy, Download, Table, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessageDataTable } from "./MessageDataTable";
@@ -13,7 +13,12 @@ interface ChatMessageProps {
   hasChart?: boolean;
   data?: MessageData;
   feedback?: "up" | "down" | null;
+  availableViews?: {
+    table: boolean;
+    chart: boolean;
+  };
   onFeedback?: (feedback: "up" | "down") => void;
+  onRequestView?: (viewType: "table" | "chart") => void;
 }
 
 export default function ChatMessage({
@@ -24,7 +29,9 @@ export default function ChatMessage({
   hasChart,
   data,
   feedback,
+  availableViews,
   onFeedback,
+  onRequestView,
 }: ChatMessageProps) {
   const isUser = role === "user";
 
@@ -44,6 +51,35 @@ export default function ChatMessage({
         >
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
         </div>
+
+        {!isUser && availableViews && (availableViews.table || availableViews.chart) && !hasTable && !hasChart && (
+          <div className="flex gap-2">
+            {availableViews.table && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onRequestView?.("table")}
+                data-testid="button-view-table"
+                className="gap-2"
+              >
+                <Table className="h-4 w-4" />
+                View as Table
+              </Button>
+            )}
+            {availableViews.chart && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onRequestView?.("chart")}
+                data-testid="button-view-chart"
+                className="gap-2"
+              >
+                <BarChart3 className="h-4 w-4" />
+                View as Chart
+              </Button>
+            )}
+          </div>
+        )}
 
         {!isUser && data && (
           <div className="w-full max-w-3xl">

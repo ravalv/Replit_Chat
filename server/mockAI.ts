@@ -23,6 +23,10 @@ interface AIResponse {
   hasTable: boolean;
   hasChart: boolean;
   data?: MessageData;
+  availableViews?: {
+    table: boolean;
+    chart: boolean;
+  };
 }
 
 const mockResponses: Record<string, AIResponse> = {
@@ -325,26 +329,106 @@ Complexity correlation: 0.73 between number of securities and delay probability.
   },
 };
 
-export function generateAIResponse(userQuery: string): AIResponse {
-  const queryLower = userQuery.toLowerCase();
+function isDrillDownRequest(query: string): { isRequest: boolean; viewType: 'table' | 'chart' | 'both' | null } {
+  const queryLower = query.toLowerCase();
+  
+  // Check for explicit drill-down requests
+  const tableKeywords = ['show as table', 'view as table', 'display table', 'show table', 'table view', 'show data table', 'view data table'];
+  const chartKeywords = ['show as chart', 'view as chart', 'display chart', 'show chart', 'chart view', 'show graph', 'view graph', 'visualize'];
+  const bothKeywords = ['show all data', 'show both', 'show everything', 'view all'];
+  
+  if (bothKeywords.some(keyword => queryLower.includes(keyword))) {
+    return { isRequest: true, viewType: 'both' };
+  }
+  if (tableKeywords.some(keyword => queryLower.includes(keyword))) {
+    return { isRequest: true, viewType: 'table' };
+  }
+  if (chartKeywords.some(keyword => queryLower.includes(keyword))) {
+    return { isRequest: true, viewType: 'chart' };
+  }
+  
+  return { isRequest: false, viewType: null };
+}
 
-  // Match query to category
+function getResponseCategory(query: string): string | null {
+  const queryLower = query.toLowerCase();
+  
   if (queryLower.includes("settlement") || queryLower.includes("trade") || queryLower.includes("fail")) {
-    return mockResponses.settlement;
+    return "settlement";
   } else if (queryLower.includes("portfolio") || queryLower.includes("holding") || queryLower.includes("asset")) {
-    return mockResponses.portfolio;
+    return "portfolio";
   } else if (queryLower.includes("corporate action") || queryLower.includes("dividend") || queryLower.includes("cash flow")) {
-    return mockResponses.corporate_actions;
+    return "corporate_actions";
   } else if (queryLower.includes("compliance") || queryLower.includes("risk") || queryLower.includes("exception")) {
-    return mockResponses.compliance;
+    return "compliance";
   } else if (queryLower.includes("fee") || queryLower.includes("revenue") || queryLower.includes("expense")) {
-    return mockResponses.fees;
+    return "fees";
   } else if (queryLower.includes("client") || queryLower.includes("payment") || queryLower.includes("invoice")) {
-    return mockResponses.client_behavior;
+    return "client_behavior";
   } else if (queryLower.includes("nav") || queryLower.includes("accrual") || queryLower.includes("fund")) {
-    return mockResponses.nav;
+    return "nav";
   } else if (queryLower.includes("reconcil") || queryLower.includes("stale") || queryLower.includes("data quality")) {
-    return mockResponses.reconciliation;
+    return "reconciliation";
+  }
+  
+  return null;
+}
+
+export function generateAIResponse(userQuery: string, lastCategory?: string): AIResponse {
+  const drillDown = isDrillDownRequest(userQuery);
+  
+  // If this is a drill-down request, use the last category
+  if (drillDown.isRequest && lastCategory) {
+    const fullResponse = mockResponses[lastCategory];
+    if (!fullResponse) {
+      return {
+        content: "I don't have data available for that visualization request. Please ask a specific financial query first.",
+        hasTable: false,
+        hasChart: false,
+      };
+    }
+    
+    // Return appropriate visualization
+    if (drillDown.viewType === 'table' && fullResponse.data?.table) {
+      return {
+        content: "Here's the data in table format:",
+        hasTable: true,
+        hasChart: false,
+        data: { table: fullResponse.data.table },
+      };
+    } else if (drillDown.viewType === 'chart' && fullResponse.data?.chart) {
+      return {
+        content: "Here's the data visualized as a chart:",
+        hasTable: false,
+        hasChart: true,
+        data: { chart: fullResponse.data.chart },
+      };
+    } else if (drillDown.viewType === 'both') {
+      return {
+        content: "Here's the complete data with both table and chart:",
+        hasTable: fullResponse.hasTable,
+        hasChart: fullResponse.hasChart,
+        data: fullResponse.data,
+      };
+    }
+  }
+  
+  // Get the category for this query
+  const category = getResponseCategory(userQuery);
+  
+  if (category) {
+    const fullResponse = mockResponses[category];
+    
+    // Return text-only response with metadata about available views
+    return {
+      content: fullResponse.content,
+      hasTable: false,
+      hasChart: false,
+      availableViews: {
+        table: fullResponse.hasTable,
+        chart: fullResponse.hasChart,
+      },
+    };
   }
 
   // Default response

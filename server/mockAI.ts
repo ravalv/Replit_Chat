@@ -374,12 +374,30 @@ function getResponseCategory(query: string): string | null {
   return null;
 }
 
+function categoryDisplayNameToKey(displayName: string): string | null {
+  const categoryMap: Record<string, string> = {
+    "Settlement & Trade Operations": "settlement",
+    "Portfolio Analytics": "portfolio",
+    "Corporate Actions": "corporate_actions",
+    "Compliance & Risk": "compliance",
+    "Fee Analysis": "fees",
+    "Client Behavior": "client_behavior",
+    "NAV Operations": "nav",
+    "Reconciliation": "reconciliation",
+  };
+  
+  return categoryMap[displayName] || null;
+}
+
 export function generateAIResponse(userQuery: string, lastCategory?: string): AIResponse {
   const drillDown = isDrillDownRequest(userQuery);
   
   // If this is a drill-down request, use the last category
   if (drillDown.isRequest && lastCategory) {
-    const fullResponse = mockResponses[lastCategory];
+    // Convert display name to key if needed
+    const categoryKey = categoryDisplayNameToKey(lastCategory) || lastCategory;
+    const fullResponse = mockResponses[categoryKey];
+    
     if (!fullResponse) {
       return {
         content: "I don't have data available for that visualization request. Please ask a specific financial query first.",

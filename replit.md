@@ -37,6 +37,7 @@ Preferred communication style: Simple, everyday language.
 - Data tables with sorting, filtering, and export capabilities
 - Session timeout warnings with countdown timers
 - Metric cards for financial KPI display
+- **Drill-down data visualization**: Initial responses show text only with interactive "View as Table" and "View as Chart" buttons for on-demand data visualization
 
 ### Backend Architecture
 
@@ -64,6 +65,8 @@ Preferred communication style: Simple, everyday language.
 - Conversation routes: `/api/conversations` (CRUD operations)
 - Message routes: `/api/conversations/:id/messages` (create, retrieve, feedback)
 - AI response generation: Mock implementation (`server/mockAI.ts`) provides templated responses with categorization
+  - **Drill-down support**: Detects phrases like "show as table" or "view as chart" to provide on-demand data visualizations
+  - **Category mapping**: Maps display category names to internal mockResponses keys for drill-down context
 
 **Data Access Layer**
 - Storage abstraction via `IStorage` interface
@@ -98,6 +101,7 @@ Preferred communication style: Simple, everyday language.
    - role (text: "user" or "assistant")
    - content (text)
    - has_table, has_chart (boolean flags for response metadata)
+   - data (JSONB, stores table/chart data and availableViews metadata)
    - feedback (text: "up" or "down" or null)
    - created_at (timestamp)
 

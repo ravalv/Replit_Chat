@@ -68,7 +68,7 @@ export default function ChatPage({ username, role, onLogout }: ChatPageProps) {
     onMutate: () => {
       setIsTyping(true);
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       if ("conversation" in data) {
         // New conversation created
         setActiveConversationId(data.conversation.id);
@@ -184,6 +184,7 @@ export default function ChatPage({ username, role, onLogout }: ChatPageProps) {
     timestamp: new Date(m.createdAt),
     hasTable: m.hasTable || false,
     hasChart: m.hasChart || false,
+    data: m.data as any,
     feedback: m.feedback as "up" | "down" | null,
   }));
 

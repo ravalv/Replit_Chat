@@ -1,7 +1,26 @@
 import { ThumbsUp, ThumbsDown, Copy, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { MessageDataTable } from "./MessageDataTable";
+import { MessageDataChart } from "./MessageDataChart";
+
+interface TableData {
+  headers: string[];
+  rows: (string | number)[][];
+}
+
+interface ChartData {
+  type: "bar" | "line" | "pie";
+  data: {
+    name: string;
+    value: number;
+  }[];
+}
+
+interface MessageData {
+  table?: TableData;
+  chart?: ChartData;
+}
 
 interface ChatMessageProps {
   role: "user" | "assistant";
@@ -9,6 +28,7 @@ interface ChatMessageProps {
   timestamp: Date;
   hasTable?: boolean;
   hasChart?: boolean;
+  data?: MessageData;
   feedback?: "up" | "down" | null;
   onFeedback?: (feedback: "up" | "down") => void;
 }
@@ -19,6 +39,7 @@ export default function ChatMessage({
   timestamp,
   hasTable,
   hasChart,
+  data,
   feedback,
   onFeedback,
 }: ChatMessageProps) {
@@ -39,14 +60,24 @@ export default function ChatMessage({
           }`}
         >
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
-          
-          {!isUser && (hasTable || hasChart) && (
-            <div className="mt-3 flex gap-2">
-              {hasTable && <Badge variant="secondary">Table Data</Badge>}
-              {hasChart && <Badge variant="secondary">Chart Available</Badge>}
-            </div>
-          )}
         </div>
+
+        {!isUser && data && (
+          <div className="w-full max-w-3xl">
+            {data.table && (
+              <MessageDataTable
+                headers={data.table.headers}
+                rows={data.table.rows}
+              />
+            )}
+            {data.chart && (
+              <MessageDataChart
+                type={data.chart.type}
+                data={data.chart.data}
+              />
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">

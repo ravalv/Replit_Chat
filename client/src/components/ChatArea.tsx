@@ -7,6 +7,24 @@ import DateFilters from "./DateFilters";
 import { PanelRightOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+interface TableData {
+  headers: string[];
+  rows: (string | number)[][];
+}
+
+interface ChartData {
+  type: "bar" | "line" | "pie";
+  data: {
+    name: string;
+    value: number;
+  }[];
+}
+
+interface MessageData {
+  table?: TableData;
+  chart?: ChartData;
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -14,6 +32,7 @@ interface Message {
   timestamp: Date;
   hasTable?: boolean;
   hasChart?: boolean;
+  data?: MessageData;
   feedback?: "up" | "down" | null;
 }
 
@@ -60,6 +79,7 @@ export default function ChatArea({
               timestamp={message.timestamp}
               hasTable={message.hasTable}
               hasChart={message.hasChart}
+              data={message.data}
               feedback={message.feedback}
               onFeedback={
                 message.role === "assistant"

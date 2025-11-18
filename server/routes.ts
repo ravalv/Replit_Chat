@@ -324,6 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: aiResponse.content,
         hasTable: aiResponse.hasTable,
         hasChart: aiResponse.hasChart,
+        data: aiResponse.data,
       });
 
       const aiMessage = await storage.createMessage(aiMessageData);
@@ -411,6 +412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: aiResponse.content,
         hasTable: aiResponse.hasTable,
         hasChart: aiResponse.hasChart,
+        data: aiResponse.data,
       });
 
       // Log query for audit

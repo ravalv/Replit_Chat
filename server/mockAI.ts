@@ -1,9 +1,28 @@
 // Mock AI response generator for financial queries
 
+export interface TableData {
+  headers: string[];
+  rows: (string | number)[][];
+}
+
+export interface ChartData {
+  type: "bar" | "line" | "pie";
+  data: {
+    name: string;
+    value: number;
+  }[];
+}
+
+export interface MessageData {
+  table?: TableData;
+  chart?: ChartData;
+}
+
 interface AIResponse {
   content: string;
   hasTable: boolean;
   hasChart: boolean;
+  data?: MessageData;
 }
 
 const mockResponses: Record<string, AIResponse> = {
@@ -16,6 +35,16 @@ const mockResponses: Record<string, AIResponse> = {
 The affected counterparties are Goldman Sachs, Morgan Stanley, and JP Morgan. All trades are flagged for immediate follow-up with T+1 settlement recovery procedures.`,
     hasTable: true,
     hasChart: false,
+    data: {
+      table: {
+        headers: ["Trade ID", "Counterparty", "Security", "Amount", "Reason", "Status"],
+        rows: [
+          ["TRD-2024-1001", "Goldman Sachs", "AAPL 100 shares", "$18,450", "Insufficient securities", "Pending"],
+          ["TRD-2024-1002", "Morgan Stanley", "TSLA 50 shares", "$12,350", "Insufficient securities", "In Progress"],
+          ["TRD-2024-1003", "JP Morgan", "MSFT 25 shares", "$8,125", "Missing instructions", "Escalated"]
+        ]
+      }
+    }
   },
   portfolio: {
     content: `Your current asset holdings breakdown:
@@ -41,6 +70,26 @@ The affected counterparties are Goldman Sachs, Morgan Stanley, and JP Morgan. Al
 Total portfolio value: $2.4B with a YTD return of +8.3%.`,
     hasTable: true,
     hasChart: true,
+    data: {
+      table: {
+        headers: ["Asset Class", "Value", "Allocation", "YTD Return", "Risk Level"],
+        rows: [
+          ["Equities", "$1.44B", "60%", "+12.5%", "Medium"],
+          ["Fixed Income", "$600M", "25%", "+4.2%", "Low"],
+          ["Alternatives", "$240M", "10%", "+6.8%", "High"],
+          ["Cash", "$120M", "5%", "+2.1%", "Very Low"]
+        ]
+      },
+      chart: {
+        type: "pie",
+        data: [
+          { name: "Equities", value: 60 },
+          { name: "Fixed Income", value: 25 },
+          { name: "Alternatives", value: 10 },
+          { name: "Cash", value: 5 }
+        ]
+      }
+    }
   },
   corporate_actions: {
     content: `Today's corporate actions affecting your portfolio:
@@ -58,6 +107,17 @@ Total portfolio value: $2.4B with a YTD return of +8.3%.`,
 All dividend payments will settle within T+2. Position updates have been automatically reflected in your holdings.`,
     hasTable: true,
     hasChart: false,
+    data: {
+      table: {
+        headers: ["Security", "Action Type", "Details", "Ex-Date", "Cash Impact", "Status"],
+        rows: [
+          ["AAPL", "Dividend", "$0.24/share", "2024-11-18", "+$48,000", "Pending"],
+          ["MSFT", "Dividend", "$0.68/share", "2024-11-18", "+$136,000", "Pending"],
+          ["JNJ", "Dividend", "$1.13/share", "2024-11-18", "+$67,800", "Pending"],
+          ["TSLA", "Stock Split", "3-for-1", "2024-11-18", "$0", "Completed"]
+        ]
+      }
+    }
   },
   compliance: {
     content: `Compliance exception analysis:
@@ -76,6 +136,26 @@ All dividend payments will settle within T+2. Position updates have been automat
 The increase in post-trade exceptions is primarily driven by T+1 settlement migration challenges. Pre-trade controls are performing well. Recommended action: Review allocation workflow automation.`,
     hasTable: true,
     hasChart: true,
+    data: {
+      table: {
+        headers: ["Exception Type", "Category", "Count", "Severity", "Change vs Last Month"],
+        rows: [
+          ["Concentration limits", "Pre-Trade", 5, "Medium", "-20%"],
+          ["Restricted securities", "Pre-Trade", 2, "High", "-30%"],
+          ["Liquidity constraints", "Pre-Trade", 1, "Low", "0%"],
+          ["Trade reporting delays", "Post-Trade", 7, "Medium", "+40%"],
+          ["Allocation errors", "Post-Trade", 3, "High", "+50%"],
+          ["Price verification", "Post-Trade", 2, "Low", "-33%"]
+        ]
+      },
+      chart: {
+        type: "bar",
+        data: [
+          { name: "Pre-Trade", value: 8 },
+          { name: "Post-Trade", value: 12 }
+        ]
+      }
+    }
   },
   fees: {
     content: `Fee revenue and expense allocation analysis:
@@ -93,6 +173,26 @@ The increase in post-trade exceptions is primarily driven by T+1 settlement migr
 Fee compression of 2 bps year-over-year, offset by 5% AUM growth. Net revenue impact: +3.2%.`,
     hasTable: true,
     hasChart: true,
+    data: {
+      table: {
+        headers: ["Quarter", "AUM", "Fee Revenue", "Fee Rate", "YoY Change"],
+        rows: [
+          ["Q1 2024", "$2.40B", "$20.4M", "0.85%", "+3.1%"],
+          ["Q2 2024", "$2.40B", "$19.9M", "0.83%", "+2.8%"],
+          ["Q3 2024", "$2.40B", "$20.9M", "0.87%", "+3.5%"],
+          ["Q4 2024 (YTD)", "$2.42B", "$5.2M", "0.86%", "+3.2%"]
+        ]
+      },
+      chart: {
+        type: "line",
+        data: [
+          { name: "Q1", value: 20.4 },
+          { name: "Q2", value: 19.9 },
+          { name: "Q3", value: 20.9 },
+          { name: "Q4 YTD", value: 5.2 }
+        ]
+      }
+    }
   },
   client_behavior: {
     content: `Client payment behavior analysis:
@@ -115,6 +215,28 @@ Fee compression of 2 bps year-over-year, offset by 5% AUM growth. Net revenue im
 Correlation detected: Higher AUM clients have 2.3x higher adjustment rates but better payment timing (avg 5 days vs 18 days).`,
     hasTable: true,
     hasChart: true,
+    data: {
+      table: {
+        headers: ["Client Name", "AUM", "Avg Payment Delay", "Outstanding", "Adjustment Rate"],
+        rows: [
+          ["XYZ Corp", "$125M", "28 days", "$120,000", "18%"],
+          ["ABC Fund", "$85M", "22 days", "$95,000", "22%"],
+          ["DEF Partners", "$65M", "15 days", "$67,000", "12%"],
+          ["GHI Holdings", "$95M", "12 days", "$45,000", "8%"],
+          ["JKL Capital", "$78M", "8 days", "$32,000", "5%"]
+        ]
+      },
+      chart: {
+        type: "bar",
+        data: [
+          { name: "XYZ Corp", value: 28 },
+          { name: "ABC Fund", value: 22 },
+          { name: "DEF Partners", value: 15 },
+          { name: "GHI Holdings", value: 12 },
+          { name: "JKL Capital", value: 8 }
+        ]
+      }
+    }
   },
   nav: {
     content: `NAV and accrual adjustment trends:
@@ -137,6 +259,27 @@ Correlation detected: Higher AUM clients have 2.3x higher adjustment rates but b
 Complexity correlation: 0.73 between number of securities and delay probability.`,
     hasTable: true,
     hasChart: true,
+    data: {
+      table: {
+        headers: ["Fund Type", "Fund Size", "Avg Accrual Adj", "NAV Variance", "Delay Rate", "Avg Delay"],
+        rows: [
+          ["Equity", "Small", "$2,400", "±0.02%", "2%", "15 mins"],
+          ["Equity", "Medium", "$2,400", "±0.02%", "5%", "25 mins"],
+          ["Equity", "Large", "$2,400", "±0.02%", "8%", "45 mins"],
+          ["Fixed Income", "Small", "$8,700", "±0.05%", "3%", "20 mins"],
+          ["Fixed Income", "Medium", "$8,700", "±0.05%", "7%", "30 mins"],
+          ["Fixed Income", "Large", "$8,700", "±0.05%", "12%", "50 mins"]
+        ]
+      },
+      chart: {
+        type: "bar",
+        data: [
+          { name: "Small Funds", value: 2 },
+          { name: "Medium Funds", value: 5 },
+          { name: "Large Funds", value: 8 }
+        ]
+      }
+    }
   },
   reconciliation: {
     content: `Reconciliation and data quality analysis:
@@ -160,6 +303,25 @@ Complexity correlation: 0.73 between number of securities and delay probability.
 - Market closures/holidays: 25% of exceptions`,
     hasTable: true,
     hasChart: true,
+    data: {
+      table: {
+        headers: ["Asset Class", "Normal Stale Rate", "High Vol Stale Rate", "Primary Cause", "Resolution Time"],
+        rows: [
+          ["Equities", "0.3%", "0.96%", "Vendor delays", "2 hours"],
+          ["Fixed Income", "1.2%", "3.84%", "Manual pricing", "4 hours"],
+          ["Alternatives", "4.5%", "14.4%", "Illiquidity", "24 hours"],
+          ["Emerging Markets", "2.8%", "8.96%", "Market closures", "12 hours"]
+        ]
+      },
+      chart: {
+        type: "bar",
+        data: [
+          { name: "Vendor delays", value: 45 },
+          { name: "Manual pricing", value: 30 },
+          { name: "Market closures", value: 25 }
+        ]
+      }
+    }
   },
 };
 

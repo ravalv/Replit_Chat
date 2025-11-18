@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -28,6 +28,7 @@ export const messages = pgTable("messages", {
   content: text("content").notNull(),
   hasTable: boolean("has_table").default(false),
   hasChart: boolean("has_chart").default(false),
+  data: jsonb("data"),
   feedback: text("feedback"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
